@@ -18,7 +18,7 @@ run;
 
 
 /* New path to data in SAS Viya */
-%let path = /newpath/user/home_equity.csv; /* <----- modify path to your new data */
+%let path = /newpath/user/home_equity.csv; /* <----- modify path to your new data on the Viya server */
 
 proc import datafile="&path/home_equity.csv" 
 			dbms=csv 

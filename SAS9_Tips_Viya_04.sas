@@ -5,61 +5,83 @@
 /**********************************************************/
 /* 4 - Run DATA step in on the distributed CAS server     */
 /**********************************************************/
+/* NOTE: The data is small for training purposes          */
+/**********************************************************/
 
 
-/************************************************************/
-/* Connect the Compute Server to the distributed CAS Server */
-/************************************************************/
+/***************************************************************/
+/* a. Connect the Compute Server to the distributed CAS Server */
+/***************************************************************/
 cas conn;
 
 
-/**********************************************/
-/* Explicity load a file into memory into CAS */
-/**********************************************/
+/*************************************************/
+/* b. Explicity load a file into memory into CAS */
+/*************************************************/
+
+/* Load the demo home_equity.csv client-side file from the SAS Viya example data sets website into the CAS server */
+filename out_file url "https://support.sas.com/documentation/onlinedoc/viya/exampledatasets/home_equity.csv";
 proc casutil;
-	load casdata='RAND_RETAILDEMO.sashdat' incaslib = 'samples'
-		 casout='RAND_RETAILDEMO' outcaslib = 'casuser';
+	load file=out_file
+		 casout='home_equity' outcaslib = 'casuser';
+quit;
+
+/* Confirm the table was loaded into CAS */
+proc casutil;
+	/* View available in-memory distributed tables */
+	list tables incaslib = 'casuser';
 quit;
 
 
 
-/************************************************/
-/* Create a library reference to a caslib       */
-/************************************************/
+/********************************************************************/
+/* c. Create a library reference to a caslib using the CAS engine   */
+/********************************************************************/
 libname casuser cas caslib = 'casuser';
 
 
 
-/*************************/
-/* Preview the CAS table */
-/*************************/
-proc print data=casuser.rand_retaildemo(obs=10);
+/****************************/
+/* d. Preview the CAS table */
+/****************************/
+proc print data=casuser.home_equity(obs=10);
 run;
 
 
 
-/**********************************************************************/
-/* Run DATA step on the in-memory table in the distributed CAS server */ 
-/* create a new in-memory table                                       */
-/**********************************************************************/
-options msglevel=i; /* <--- View additional log notes */
-data casuser.rand_retaildemo_final;
-	set casuser.rand_retaildemo end=eof; /* <-- View the number of processing threads */
+/*************************************************************************/
+/* e. Run DATA step on the in-memory table in the distributed CAS server */ 
+/*    and create a new in-memory CAS table                               */
+/*************************************************************************/
 
-	/* Data prep */
-	Department = upcase(Department);
-	Profit = Sales - Cost;
-	Location = catx(',',City, Country);
-	drop MDY Storechain1 brand_name1;
+/* Prepare the data using the distributed CAS server */
+data casuser.final_home_equity;
+	set casuser.home_equity end=end_of_thread;
 
-	/* View number of processing threads and rows per thread */
-	if eof=1 then put _NTHREADS_= _THREADID_= _N_=;
+	/* Fix missing values with means */
+	if YOJ = . then YOJ = 9;
+	if MORTDUE = . then MORTDUE = 73761;
+	if VALUE = . then VALUE = 101776;
+	if DEBTINC = . then DEBTINC = 34;
+
+	/* Round column */
+	DEBTINC = round(DEBTINC);
+
+	/* Format columns */
+	format APPDATE date9.;
+
+	/* Drop columns */
+	drop DEROG DELINQ CLAGE NINQ CLNO CITY;
+
+	/* View number of rows processed on each thread (demo data, not all threads will be used) */
+	if end_of_thread=1 then	
+		put  'Total Available Threads for Processing: ' _NTHREADS_
+             'Processing Thread ID: '    _THREADID_ 
+             ', Total Rows Processed Thread: '  _N_ ;
 run;
-options msglevel=n; /* Reset notes to the default */
 
 
 
-/**********************************/
-/* Disconnect from the CAS server */
-/**********************************/
-cas conn terminate;
+/*************************************/
+/* Continue to the next program      */
+/*************************************/

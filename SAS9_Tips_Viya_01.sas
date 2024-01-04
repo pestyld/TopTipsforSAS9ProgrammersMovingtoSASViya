@@ -6,14 +6,24 @@
 /* 1 - Run SAS9 Code on SAS Viya! */
 /**********************************/
 
-/* Specify the folder to save the CSV file */
+/******************************/
+/* a. Specify the folder path */
+/******************************/
+/* Dynamically specify the project folder */
 /* Find current folder. SAS program must be saved to the location */
 %let fileName =  %scan(&_sasprogramfile,-1,'/');
 %let path = %sysfunc(tranwrd(&_sasprogramfile, &fileName,));
+
+/* View the folder path*/
 %put &=path;
 
 
-/* Download CSV file URL */
+
+/*********************************/
+/* b. Download CSV file from SAS */
+/*********************************/
+
+/* SAS Viya documentation data sets URL */
 %let download_url = https://support.sas.com/documentation/onlinedoc/viya/exampledatasets/home_equity.csv;
 
 /* Download CSV file from the internet to SAS */
@@ -24,14 +34,18 @@ proc http
 	out=out_file;
 run;
 
-
-/* Create a SAS table */
+/* Create a SAS table in the WORK library */
 proc import datafile="&path/home_equity.csv" 
 			dbms=csv 
 			out=work.home_equity;
 	guessingrows=1000;
 run;
 
+
+
+/*********************************/
+/* c. Run SAS9 in Viya!          */
+/*********************************/
 
 /* Preview the SAS table */
 proc print data=work.home_equity(obs=10);
@@ -155,6 +169,6 @@ run;
 
 /* Apply the model on the data */
 proc plm restore=mymodel;
-	score data = work.final_home_equity
-		  out = work.he_score predicted lclm uclm / ilink;
+	score data= work.final_home_equity
+		  out=work.he_score predicted lclm uclm / ilink;
 run;

@@ -2,51 +2,19 @@
 /* 9 for SAS9 – Top Tips for SAS 9 Programmers Moving to SAS Viya   */
 /********************************************************************/
 
-/**********************************************************/
-/* 5 - New distributed PROCS for the CAS server           */
-/* NOTE: The data is small for training purposes          */
-/**********************************************************/
+/********************************************************************/
+/* 5 - New distributed PROCS for the CAS server                     */
+/********************************************************************/
+/* NOTE: Continue processing the home_equity_final CAS table from   */
+/*       the previous program. Once the data is loaded in-memory    */
+/*       it stays in-memory until dropped or the CAS session ends.  */
+/********************************************************************/
 
 
-/************************************************************/
-/* Connect the Compute Server to the distributed CAS Server */
-/************************************************************/
-cas conn;
-
-
-/*******************************************************************/
-/* Download the CSV file from the internet and load as a CAS table */
-/*******************************************************************/
-/* We will use a small sample table for demonstration purposes     */
-/*******************************************************************/
-%let download_url = https://support.sas.com/documentation/onlinedoc/viya/exampledatasets/home_equity.csv;
-filename csv_file url "&download_url";
-
-/* Load the CSV file as a distributed CAS table */
-proc casutil;
-	load file=csv_file casout='home_equity' outcaslib='casuser';
-quit;
-
-
-
-/************************************************/
-/* Create a library reference to a caslib       */
-/************************************************/
-libname casuser cas caslib = 'casuser';
-
-
-
-/*************************/
-/* Preview the CAS table */
-/*************************/
-proc print data=casuser.home_equity(obs=10);
-run;
-
-
-/*********************************/
-/* Descriptive statistics in CAS */
-/*********************************/
-proc mdsummary data=casuser.home_equity;
+/************************************/
+/* a. Descriptive statistics in CAS */
+/************************************/
+proc mdsummary data=casuser.final_home_equity;
 	output out=casuser.home_equity_summary;
 run;
 proc print data=casuser.home_equity_summary;
@@ -54,29 +22,30 @@ run;
 
 
 
-/*********************************************/
-/* Frequencies in the distributed CAS server */
-/*********************************************/
-proc freqtab data=casuser.home_equity;
-	tables BAD REASON JOB NINQ CLNO STATE DIVISION REGION / plots=freqplot;
+/************************************************/
+/* b. Frequencies in the distributed CAS server */
+/************************************************/
+proc freqtab data=casuser.final_home_equity;
+	tables BAD REASON JOB STATE DIVISION REGION / plots=freqplot;
 quit;
 
 
 
-/*********************************************/
-/* Correlation in the distributed CAS server */
-/*********************************************/
-proc correlation data=casuser.home_equity;
+/************************************************/
+/* c. Correlation in the distributed CAS server */
+/************************************************/
+proc correlation data=casuser.final_home_equity;
 run;
 
 
-/*************************************************/
-/* View the cardinality of the columns using CAS */
-/*************************************************/
-/* The CARDINALITY procedure determines a variable’s cardinality or limited cardinality in SAS Viya. 
-   The cardinality of a variable is the number of its distinct values, and the limited cardinality of a 
-   variable is the number of its distinct values that do not exceed a specified threshold. */
-proc cardinality data=casuser.home_equity
+/*********************************************************************************************************/
+/* d. View the cardinality of the columns using CAS                                                      */
+/*********************************************************************************************************/
+/*  The CARDINALITY procedure determines a variable’s cardinality or limited cardinality in SAS Viya.    */
+/*  The cardinality of a variable is the number of its distinct values, and the limited cardinality of a */
+/*  variable is the number of its distinct values that do not exceed a specified threshold.              */
+/*********************************************************************************************************/
+proc cardinality data=casuser.final_home_equity
 				 outcard=casuser.home_equity_cardinality maxlevels=250;
 run;
 proc print data=casuser.home_equity_cardinality;
@@ -84,40 +53,32 @@ run;
 
 
 
-/*****************************************************/
-/* Logistic regression in the distributed CAS server */
-/*****************************************************/
-/* Create a model to predict bad loans */
-proc logistic data=work.final_home_equity;
-	class REASON JOB / param=REFERENCE;
-	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC;
-	store mymodel;
-run;
+/********************************************************/
+/* e. Logistic regression in the distributed CAS server */
+/********************************************************/
 
-proc logselect data=casuser.home_equity;
-	class REASON JOB / param=REFERENCE;
-	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC / link=logit dist=binary; 
-	selection method=NONE;
+/* Create a model to predict bad loans on SAS9 */
+/* proc logistic data=work.final_home_equity; */
+/* 	class REASON JOB / param=REFERENCE; */
+/* 	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC; */
+/* 	store mymodel; */
+/* run; */
 
-run;
-
-proc genselect data=casuser.home_equity;
+/* Run a linear regression using the distributed CAS server */
+proc logselect data=casuser.final_home_equity;
 	class REASON JOB / param=REFERENCE;
 	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC / link=logit dist=binary; 
 	selection method=NONE;
-    store out=casuser.mymodel;
-/* 	code  */
+	store out=casuser.mymodel;
 run;
 
+/* Score the data using your model */
 proc astore;
-	score data=casuser.home_equity 
+	score data=casuser.final_home_equity 
           rstore=casuser.mymodel
 		  copyvars=BAD
           out=casuser.home_equity_scored;
 quit;
 
-
-/**********************************/
-/* Disconnect from the CAS server */
-/**********************************/
-cas conn terminate;
+proc print data=casuser.home_equity_scored(obs=100);
+run;
