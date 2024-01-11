@@ -6,15 +6,22 @@
 /* 1 - Run SAS9 Code on SAS Viya! */
 /**********************************/
 
-/******************************/
-/* a. Specify the folder path */
-/******************************/
-/* Dynamically specify the project folder */
-/* Find current folder. SAS program must be saved to the location */
-%let fileName =  %scan(&_sasprogramfile,-1,'/');
-%let path = %sysfunc(tranwrd(&_sasprogramfile, &fileName,));
+/*****************************************/
+/* a. REQUIRED - Specify the folder path */
+/*****************************************/
 
-/* View the folder path*/
+/* This code will dynamically specify the project folder */     
+/* REQUIRED - SAS program must be saved to the location */
+/* REQUIRED - Valid only in SAS Studio */
+%let fileName =  %scan(&_sasprogramfile,-1,'/\');
+%let myPath = %sysfunc(tranwrd(&_sasprogramfile, &fileName,));
+%put &=myPath;
+
+
+/* You can also manually specify your path to the location you want to save the downloaded CSV file if the code above does not work */
+%let path = &myPath;   /*-----Modify your path here if necessary - Example path: C:/user/documents/ */
+
+/* View the path to download the CSV file in the log */
 %put &=path;
 
 
@@ -26,7 +33,7 @@
 /* SAS Viya documentation data sets URL */
 %let download_url = https://support.sas.com/documentation/onlinedoc/viya/exampledatasets/home_equity.csv;
 
-/* Download CSV file from the internet to SAS */
+/* Download CSV file from the internet and save the CSV file in SAS */
 filename out_file "&path/home_equity.csv";
 proc http
  	url="&download_url"
@@ -34,10 +41,11 @@ proc http
 	out=out_file;
 run;
 
-/* Create a SAS table in the WORK library */
+/* Import the CSV file and create a SAS table in the WORK library */
 proc import datafile="&path/home_equity.csv" 
 			dbms=csv 
-			out=work.home_equity;
+			out=work.home_equity
+			replace;
 	guessingrows=1000;
 run;
 
@@ -85,7 +93,7 @@ run;
 
 /* View missing values in the table */
 
-/* Create a format to group missing and nonmissing */
+/* a. Create a format to group missing and nonmissing */
 proc format;
 	value $missfmt 
 		' '='Missing' 
@@ -94,7 +102,8 @@ proc format;
 		. ='Missing' 
 		other='Not Missing';
 run;
-/* Apply the format in PROC FREQ */
+
+/* b. Apply the format in PROC FREQ */
 proc freq data=work.home_equity; 
 	format _CHAR_ $missfmt.; /* apply format for the duration of this PROC */
 	tables _CHAR_ / missing missprint nocum nopercent;
@@ -158,17 +167,22 @@ title height=14pt justify=left "Current vs Default Loans";
 proc sgplot data=work.final_home_equity;
 	vbar BAD / datalabel;
 run;
+title;
 
 
-/* Create a model to predict bad loans */
+/* Create a logistic regression model to predict bad loans */
 proc logistic data=work.final_home_equity;
 	class REASON JOB / param=REFERENCE;
 	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC;
 	store mymodel;
 run;
 
-/* Apply the model on the data */
+/* Score the model on the data */
 proc plm restore=mymodel;
 	score data= work.final_home_equity
-		  out=work.he_score predicted lclm uclm / ilink;
+		  out=work.he_score predicted lclm uclm / ilink; 
+run;
+
+/* Preview the scored data */
+proc print data=work.he_score(obs=25);
 run;

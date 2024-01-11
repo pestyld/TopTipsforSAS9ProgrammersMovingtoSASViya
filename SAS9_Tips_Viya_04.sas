@@ -8,11 +8,11 @@
 /* NOTE: The data is small for training purposes          */
 /**********************************************************/
 
-
 /***************************************************************/
 /* a. Connect the Compute Server to the distributed CAS Server */
 /***************************************************************/
 cas conn;
+
 
 
 /*************************************************/
@@ -44,8 +44,10 @@ libname casuser cas caslib = 'casuser';
 /****************************/
 /* d. Preview the CAS table */
 /****************************/
+title "Original Raw Data";
 proc print data=casuser.home_equity(obs=10);
 run;
+title;
 
 
 
@@ -56,7 +58,7 @@ run;
 
 /* Prepare the data using the distributed CAS server */
 data casuser.final_home_equity;
-	set casuser.home_equity end=end_of_thread;
+	set casuser.home_equity end=end_of_thread; /* Use the END= opiton to view the processing by thread *.
 
 	/* Fix missing values with means */
 	if YOJ = . then YOJ = 9;
@@ -76,12 +78,19 @@ data casuser.final_home_equity;
 	/* View number of rows processed on each thread (demo data, not all threads will be used) */
 	if end_of_thread=1 then	
 		put  'Total Available Threads for Processing: ' _NTHREADS_
-             'Processing Thread ID: '    _THREADID_ 
-             ', Total Rows Processed Thread: '  _N_ ;
+             ', Processing Thread ID: '    _THREADID_ 
+             ', Total Rows Processed by Thread: '  _N_ ;
 run;
 
 
+/*********************************/
+/* f. Preview the new CAS table */
+/*********************************/
+/* Prepared CAS table */
+proc print data=casuser.final_home_equity(obs=10);
+run;
 
-/*************************************/
-/* Continue to the next program      */
-/*************************************/
+
+/*****************************************************************/
+/* Continue to the next program without disconnecting from CAS   */
+/*****************************************************************/

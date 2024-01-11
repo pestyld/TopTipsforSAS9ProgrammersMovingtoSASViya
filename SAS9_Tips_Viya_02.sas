@@ -7,21 +7,22 @@
 /*****************************************/
 
 /* Old local path or SAS9 remote server path */
-%let path = C:\workshop; /* <----- modify path fromn your old data to your new data */
+%let old_path = C:\workshop;
 
-proc import datafile="&path/home_equity.csv" 
+proc import datafile="&old_path/home_equity.csv" 
 			dbms=csv 
-			out=work.new_table;
+			out=work.new_table replace;
 	guessingrows=1000;
 run;
 
 
 
 /* New path to data in SAS Viya */
-%let path = /newpath/user/home_equity.csv; /* <----- modify path to your new data on the Viya server */
+/* You can use the path macro variable from the previous program */
+%let path = &path; /* ----- modify path to your data on the Viya server. Example - /new_viya_path/user  */
 
 proc import datafile="&path/home_equity.csv" 
 			dbms=csv 
-			out=work.new_table;
+			out=work.new_table replace;
 	guessingrows=1000;
 run;

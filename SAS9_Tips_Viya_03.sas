@@ -6,7 +6,6 @@
 /* 3 - Loading data into memory in CAS for distributed processing */
 /******************************************************************/
 
-
 /***************************************************************/
 /* a. Connect the Compute Server to the distributed CAS Server */
 /***************************************************************/
@@ -29,7 +28,7 @@ caslib _all_ list;
 /*********************************************************/
 /* c. View available files in a caslib on the CAS server */
 /*********************************************************/
-/* The samples caslib is available by default. It's similar to the SASHELP library on the Compute Server */
+/* The samples caslib is available by default. It's similar to the SASHELP library on the Compute server */
 
 proc casutil;
 	list files incaslib = 'samples';

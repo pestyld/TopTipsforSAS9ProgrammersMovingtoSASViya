@@ -5,11 +5,10 @@
 /********************************************************************/
 /* 5 - New distributed PROCS for the CAS server                     */
 /********************************************************************/
-/* NOTE: Continue processing the home_equity_final CAS table from   */
+/* NOTE: Continue processing the final_home_equity CAS table from   */
 /*       the previous program. Once the data is loaded in-memory    */
 /*       it stays in-memory until dropped or the CAS session ends.  */
 /********************************************************************/
-
 
 /************************************/
 /* a. Descriptive statistics in CAS */
@@ -56,19 +55,13 @@ run;
 /********************************************************/
 /* e. Logistic regression in the distributed CAS server */
 /********************************************************/
-
-/* Create a model to predict bad loans on SAS9 */
-/* proc logistic data=work.final_home_equity; */
-/* 	class REASON JOB / param=REFERENCE; */
-/* 	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC; */
-/* 	store mymodel; */
-/* run; */
+/* Demo: Logistic Regression Modeling Using the LOGSELECT Procedure in SAS Viya */
+/* https://video.sas.com/detail/video/5334372288001/logistic-regression-modeling-using-the-logselect-procedure-in-sas-viya */
 
 /* Run a linear regression using the distributed CAS server */
 proc logselect data=casuser.final_home_equity;
 	class REASON JOB / param=REFERENCE;
-	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC / link=logit dist=binary; 
-	selection method=NONE;
+	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC; 
 	store out=casuser.mymodel;
 run;
 
@@ -80,5 +73,11 @@ proc astore;
           out=casuser.home_equity_scored;
 quit;
 
-proc print data=casuser.home_equity_scored(obs=100);
+/* Preview the scored data */
+proc print data=casuser.home_equity_scored;
 run;
+
+
+/*****************************************************************/
+/* Continue to the next program without disconnecting from CAS   */
+/*****************************************************************/
