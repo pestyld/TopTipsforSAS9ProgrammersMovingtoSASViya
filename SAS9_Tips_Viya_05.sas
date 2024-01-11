@@ -74,7 +74,7 @@ proc astore;
 quit;
 
 /* Preview the scored data */
-proc print data=casuser.home_equity_scored;
+proc print data=casuser.home_equity_scored(obs=10);
 run;
 
 

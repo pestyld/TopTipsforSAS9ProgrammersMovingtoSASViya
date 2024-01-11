@@ -41,7 +41,7 @@ quit;
 /********************************************************************************************/
 proc casutil;
 
-	/* Explicity load a server-side file into memory (files can be a database table, or other file formats like CSV,TXT, PARQUET and more) */
+	/* Explicitly load a server-side file into memory (files can be a database table, or other file formats like CSV,TXT, PARQUET and more) */
 	load casdata='RAND_RETAILDEMO.sashdat' incaslib = 'samples'
 		 casout='RAND_RETAILDEMO' outcaslib = 'casuser';
 

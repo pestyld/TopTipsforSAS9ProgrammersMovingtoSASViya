@@ -15,9 +15,9 @@ cas conn;
 
 
 
-/*************************************************/
-/* b. Explicity load a file into memory into CAS */
-/*************************************************/
+/**************************************************/
+/* b. Explicitly load a file into memory into CAS */
+/**************************************************/
 
 /* Load the demo home_equity.csv client-side file from the SAS Viya example data sets website into the CAS server */
 filename out_file url "https://support.sas.com/documentation/onlinedoc/viya/exampledatasets/home_equity.csv";
@@ -58,7 +58,7 @@ title;
 
 /* Prepare the data using the distributed CAS server */
 data casuser.final_home_equity;
-	set casuser.home_equity end=end_of_thread; /* Use the END= opiton to view the processing by thread *.
+	set casuser.home_equity end=end_of_thread; /* Use the END= option to view the processing by thread *.
 
 	/* Fix missing values with means */
 	if YOJ = . then YOJ = 9;
@@ -86,10 +86,10 @@ run;
 /*********************************/
 /* f. Preview the new CAS table */
 /*********************************/
-/* Prepared CAS table */
+title 'Prepared CAS table';
 proc print data=casuser.final_home_equity(obs=10);
 run;
-
+title;
 
 /*****************************************************************/
 /* Continue to the next program without disconnecting from CAS   */
