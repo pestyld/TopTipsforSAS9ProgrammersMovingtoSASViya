@@ -9,7 +9,7 @@
 /* Old local path or SAS9 remote server path */
 %let old_path = C:\workshop;
 
-proc import datafile="&old_path/home_equity.csv" 
+proc import datafile="C:/users/peter/home_equity.csv" 
 			dbms=csv 
 			out=work.new_table replace;
 	guessingrows=1000;
