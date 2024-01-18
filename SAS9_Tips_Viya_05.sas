@@ -58,7 +58,7 @@ run;
 /* Demo: Logistic Regression Modeling Using the LOGSELECT Procedure in SAS Viya */
 /* https://video.sas.com/detail/video/5334372288001/logistic-regression-modeling-using-the-logselect-procedure-in-sas-viya */
 
-/* Run a linear regression using the distributed CAS server */
+/* Run a logistic regression using the distributed CAS server */
 proc logselect data=casuser.final_home_equity;
 	class REASON JOB / param=REFERENCE;
 	model BAD(event='1') = LOAN MORTDUE VALUE REASON JOB YOJ DEBTINC; 
